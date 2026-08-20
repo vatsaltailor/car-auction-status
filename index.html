@@ -1,0 +1,135 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Car Auction Valuation — Status</title>
+<style>
+:root{
+  --paper:#F6F8FA;--card:#FFFFFF;--ink:#14202B;--ink-soft:#4A5B69;
+  --steel:#2E6E8E;--steel-deep:#1B4A63;--rule:#D8E0E7;--plum:#6E4B8F;--dim:#9BAAB6;
+  --ok:#1E7E34;--warn:#A15C00;--bad:#B03A2E;
+  --display:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+#app{display:none}
+a{color:var(--steel)}
+.masthead{border-bottom:1px solid var(--rule);background:var(--card);padding:20px 26px 16px}
+.masthead h1{font-family:var(--display);font-weight:600;font-size:27px;letter-spacing:-.01em;margin:0 0 6px}
+.masthead .sub{font-family:var(--mono);font-size:12.5px;color:var(--ink-soft)}
+.wrap{max-width:1050px;margin:0 auto;padding:22px 26px 70px}
+h2{font-family:var(--display);font-size:20px;color:var(--steel-deep);border-bottom:2px solid var(--rule);padding-bottom:6px;margin:34px 0 14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:16px}
+.kpi{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:13px 15px}
+.kpi .n{font-family:var(--display);font-size:26px;font-weight:600;color:var(--steel-deep)}
+.kpi .l{font-family:var(--mono);font-size:11px;letter-spacing:.03em;color:var(--ink-soft);text-transform:uppercase;margin-top:3px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;margin:6px 0}
+th{background:var(--steel-deep);color:#fff;text-align:left;padding:8px 10px;font-weight:600}
+td{padding:7px 10px;border:1px solid var(--rule)}
+tr:nth-child(even) td{background:#f5f8fa}
+.badge{display:inline-block;padding:2px 9px;border-radius:11px;font-family:var(--mono);font-size:11.5px;font-weight:600}
+.b-done{background:#e6f4ea;color:var(--ok)}.b-run{background:#eef4fa;color:var(--steel-deep)}.b-todo{background:#eee;color:var(--dim)}
+.b-warn{background:#fff3e0;color:var(--warn)}
+.mono{font-family:var(--mono);font-size:12.5px}
+.note{color:var(--ink-soft);font-size:13px;margin:6px 0}
+.pill{font-family:var(--mono);font-size:11.5px;background:var(--paper);border:1px solid var(--rule);border-radius:20px;padding:3px 11px;margin:3px 5px 3px 0;display:inline-block}
+.ladder{display:grid;grid-template-columns:120px 1fr;gap:8px 14px;font-size:13.5px;margin-top:6px}
+.ladder .f{font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;padding-top:4px}
+footer{margin-top:44px;padding-top:14px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:11.5px;color:var(--dim)}
+/* gate */
+#gate{position:fixed;inset:0;background:var(--steel-deep);display:grid;place-items:center;z-index:50;padding:20px}
+#gate .box{background:var(--card);border-radius:10px;padding:30px 28px;width:min(400px,100%);box-shadow:0 18px 50px rgba(0,0,0,.3);text-align:center}
+#gate h3{font-family:var(--display);font-size:21px;margin:0 0 4px;color:var(--ink)}
+#gate p{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin:0 0 18px}
+#gate input{width:100%;padding:11px 12px;border:1px solid var(--rule);border-radius:6px;font-family:var(--mono);font-size:14px;margin-bottom:12px}
+#gate input:focus{outline:none;border-color:var(--steel)}
+#gate button{width:100%;background:var(--steel-deep);color:#fff;border:none;border-radius:6px;padding:11px;font-size:14px;cursor:pointer}
+#gate button:hover{background:var(--steel)}
+#gate .err{color:var(--bad);font-family:var(--mono);font-size:12px;height:16px;margin-top:8px}
+</style>
+
+<!-- ============ PASSWORD GATE (client-side only — soft gate, see note) ============ -->
+<div id="gate">
+  <div class="box">
+    <h3>Car Auction Valuation</h3>
+    <p>Project status — enter access word</p>
+    <input id="pw" type="password" placeholder="access word" autofocus autocomplete="off">
+    <button onclick="tryPw()">View status</button>
+    <div class="err" id="err"></div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="masthead">
+    <h1>Collector-Car Presale Valuation — Project Status</h1>
+    <div class="sub">Bring a Trailer / Classic.com &nbsp;·&nbsp; PI: Prof. Anton Ivanov &nbsp;·&nbsp; updated 2026-08-20</div>
+  </div>
+
+  <div class="wrap">
+    <div class="cards">
+      <div class="kpi"><div class="n">4</div><div class="l">run batches complete</div></div>
+      <div class="kpi"><div class="n">200</div><div class="l">held-out eval cars</div></div>
+      <div class="kpi"><div class="n">13.7%</div><div class="l">best dialogue MAPE (D·withDB)</div></div>
+      <div class="kpi"><div class="n">$8.9k</div><div class="l">P3 MoE RMSE (best signal)</div></div>
+      <div class="kpi"><div class="n">0</div><div class="l">leakage violations</div></div>
+    </div>
+
+    <h2>Completed runs</h2>
+    <table>
+      <tr><th>Run</th><th>Model</th><th>Scope</th><th>Headline result</th><th>Status</th></tr>
+      <tr><td>Signals P1 / P2 / P3</td><td>—</td><td>eval-200</td><td>P3 MoE best: RMSE $8.9k / MAPE 20.6%; beats P1≈P2 (DM test)</td><td><span class="badge b-done">done</span></td></tr>
+      <tr><td>Synthesis ablation S1–S8</td><td>Opus 4.8 + compiler</td><td>50 cars · k=3</td><td>s7 (signals+comps) best RMSE ~$5.6k / 22.8%; comps help</td><td><span class="badge b-done">done</span></td></tr>
+      <tr><td>D/I dialogues (v7, DB operator)</td><td>Opus 4.8 + GPT-5.5</td><td>10 cars · 4 conditions</td><td>D·withDB 13.7% best; I·withDB 15.7%; dialogue ≈ neutral vs prior 14.9%</td><td><span class="badge b-done">done</span></td></tr>
+      <tr><td>D-only, no-DB operator (v8)</td><td>Opus 4.8 + GPT-5.5</td><td>10 cars · 2 conditions</td><td>D·noDB 15.4% — did <b>not</b> improve; hypothesis not supported (small n)</td><td><span class="badge b-done">done</span></td></tr>
+      <tr><td>GLM-5.2 synthesis smoke</td><td>GLM-5.2 (Lumen)</td><td>1 car · 8 cells · no tools</td><td>8/8 parse; tool-calling confirmed; ~0.069 coins/car</td><td><span class="badge b-done">done</span></td></tr>
+    </table>
+    <p class="note">MAPE = mean absolute % error vs realized sale price. All runs verified 0 leakage (VIN / price / date never reach any model; comps are pre-listing, identity-stripped).</p>
+
+    <h2>Testing ladder (Anton) — the run matrix</h2>
+    <p class="note">Full factorial across five factors — <b>4 × 2 × 4 × 8 × 2 = 512 combinations</b> — pruned to the subset worth running.</p>
+    <div class="ladder">
+      <div class="f">Model</div><div><span class="pill">Qwen 3.6</span><span class="pill">Qwen 3.8 (27b)</span><span class="pill">GLM 5.2 ✓ live</span><span class="pill">GLM 5.3</span></div>
+      <div class="f">Resources</div><div><span class="pill">2k tokens</span><span class="pill">4k tokens</span></div>
+      <div class="f">Features</div><div><span class="pill">None</span><span class="pill">Code</span><span class="pill">Search</span><span class="pill">Code + Search</span></div>
+      <div class="f">Synthesis</div><div><span class="pill">s1 ATT only</span><span class="pill">s2 +P1–P4</span><span class="pill">s3 +step</span><span class="pill">s4 +checklist</span><span class="pill">s5 +padding</span><span class="pill">s6 +ATTc</span><span class="pill">s7 +P1–P4+ATTc</span><span class="pill">s8 +Role</span></div>
+      <div class="f">Dialogue</div><div><span class="pill">S5 × D/I</span><span class="pill">S7 × D/I</span></div>
+    </div>
+
+    <h2>Infrastructure</h2>
+    <table>
+      <tr><th>Resource</th><th>What</th><th>Status</th></tr>
+      <tr><td>Lumen (NCSA)</td><td>Hosted GLM-5.2 endpoint, OpenAI-compatible, coins</td><td><span class="badge b-done">live</span> tool-calling ✓ (intermittent health)</td></tr>
+      <tr><td>UIUC Campus Cluster</td><td>H100/A100 via Slurm (sridhar-ic) — free batch via llmflux</td><td><span class="badge b-done">available</span></td></tr>
+      <tr><td>Delta (NCSA)</td><td>National GPU system</td><td><span class="badge b-warn">no access yet</span> (pending NCSA)</td></tr>
+      <tr><td>Frontier APIs</td><td>Claude Opus 4.8 (guide), GPT-5.5 (operator), DeepSeek (P4)</td><td><span class="badge b-done">live</span></td></tr>
+    </table>
+
+    <h2>In progress / next</h2>
+    <table>
+      <tr><th>Item</th><th>Status</th></tr>
+      <tr><td>GLM-5.2 synthesis at scale (all 8 cells, k=3, on eval cars)</td><td><span class="badge b-run">ready to run</span></td></tr>
+      <tr><td>GLM-5.2 D/I dialogue adapter + multi-turn format test</td><td><span class="badge b-run">building</span></td></tr>
+      <tr><td>Firm up small-n dialogue result (more cars)</td><td><span class="badge b-todo">planned</span></td></tr>
+      <tr><td>Free full-dataset synthesis via llmflux on Campus Cluster</td><td><span class="badge b-todo">planned</span></td></tr>
+      <tr><td>Bigger Lumen coin pool for GLM at scale</td><td><span class="badge b-todo">NCSA request</span></td></tr>
+    </table>
+
+    <footer>Private status page — client-side access word only, not for sensitive data. Aggregate metrics only; no raw data, VINs, prices, or keys are published here.</footer>
+  </div>
+</div>
+
+<script>
+// Plain client-side gate (soft — anyone can view-source; aggregate status only, nothing sensitive).
+const ACCESS_WORD = "anton-bat-2026";   // <-- change this line to set a new word
+function reveal(){ document.getElementById("gate").style.display="none"; document.getElementById("app").style.display="block"; }
+function tryPw(){
+  const v = document.getElementById("pw").value.trim();
+  if(v === ACCESS_WORD){ sessionStorage.setItem("cav_ok","1"); reveal(); }
+  else { document.getElementById("err").textContent = "Wrong access word."; }
+}
+document.getElementById("pw").addEventListener("keydown", e => { if(e.key==="Enter") tryPw(); });
+if(sessionStorage.getItem("cav_ok")==="1") reveal();
+</script>
