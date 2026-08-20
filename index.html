@@ -2,93 +2,123 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Run Status</title>
+<title>Testing pipeline — status</title>
 <style>
-  body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:880px;margin:0 auto;padding:20px;color:#1a1a1a;font-size:15px;line-height:1.5}
-  h1{font-size:22px;margin:0 0 2px}
-  .sub{color:#666;font-size:13px;margin-bottom:18px}
-  h2{font-size:16px;margin:26px 0 8px;padding-bottom:4px;border-bottom:2px solid #eee}
-  table{border-collapse:collapse;width:100%;font-size:14px;margin:4px 0}
-  th{text-align:left;color:#666;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em;padding:6px 8px;border-bottom:1px solid #ddd}
-  td{padding:7px 8px;border-bottom:1px solid #f0f0f0;vertical-align:top}
-  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
-  .running .dot{background:#2563eb}.done .dot{background:#16a34a}.queued .dot{background:#9ca3af}
-  .st{font-size:12px;color:#666}
-  .sum{color:#444;font-size:14px;margin:10px 0 4px}
-  .sum b{color:#111}
+  :root{--paper:#F6F8FA;--card:#FFF;--ink:#14202B;--soft:#4A5B69;--steel:#2E6E8E;--rule:#D8E0E7;--dim:#9BAAB6;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    --done:#16A34A;--run:#2563EB;--queue:#C6CDD4;}
+  *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px}
+  .head{background:var(--card);border-bottom:1px solid var(--rule);padding:14px 20px}
+  .head h1{font-family:var(--sans);font-weight:600;font-size:18px;margin:0}
+  .legend{font-family:var(--mono);font-size:11.5px;color:var(--soft);margin-top:8px;display:flex;gap:16px;flex-wrap:wrap}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .legend i{width:9px;height:9px;border-radius:50%;display:block}
+  .wrap{padding:16px 20px 60px;max-width:820px}
+  .bar{display:flex;gap:8px;margin-bottom:10px}
+  .bar button{font-family:var(--mono);font-size:12px;border:1px solid var(--rule);background:var(--card);color:var(--steel);border-radius:4px;padding:4px 9px;cursor:pointer}
+  .node .kids{margin-left:12px;padding-left:12px;border-left:1.5px solid var(--rule)}
+  .row{display:flex;align-items:center;gap:7px;padding:2px 4px;border-radius:4px}
+  .row:hover{background:var(--card)}
+  .tw{border:none;background:none;width:16px;color:var(--dim);font-size:9px;cursor:pointer;flex:none}
+  .tw.leaf{color:var(--rule);cursor:default}
+  .lbl{font-family:var(--mono);font-size:13px}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .cnt{font-family:var(--mono);font-size:11px;color:var(--dim)}
   #app{display:none}
-  /* gate */
-  #gate{position:fixed;inset:0;background:#1f2937;display:grid;place-items:center;padding:20px}
-  #gate .box{background:#fff;border-radius:8px;padding:26px;width:min(360px,100%);text-align:center}
-  #gate input{width:100%;padding:10px;border:1px solid #ccc;border-radius:5px;font-size:14px;margin:12px 0}
-  #gate button{width:100%;padding:10px;border:none;border-radius:5px;background:#1f2937;color:#fff;font-size:14px;cursor:pointer}
+  #gate{position:fixed;inset:0;background:#1B4A63;display:grid;place-items:center;padding:20px}
+  #gate .box{background:#fff;border-radius:8px;padding:24px;width:min(340px,100%);text-align:center}
+  #gate input{width:100%;padding:10px;border:1px solid #ccc;border-radius:5px;margin:12px 0;font-size:14px}
+  #gate button{width:100%;padding:10px;border:none;border-radius:5px;background:#1B4A63;color:#fff;cursor:pointer}
   #gate .err{color:#dc2626;font-size:12px;height:14px;margin-top:6px}
 </style>
 
 <div id="gate"><div class="box">
-  <b>Car Auction — Run Status</b>
+  <b>Testing pipeline</b>
   <input id="pw" type="password" placeholder="access word" autofocus autocomplete="off">
-  <button onclick="go()">View</button>
-  <div class="err" id="err"></div>
+  <button onclick="go()">View</button><div class="err" id="err"></div>
 </div></div>
 
 <div id="app">
-  <h1>Car Auction Valuation — Run Status</h1>
-  <div class="sub">updated 2026-08-20 · <span id="counts"></span></div>
-  <div id="board"></div>
-  <p class="st" style="margin-top:30px;color:#999">Private status page. To update: edit the RUNS list in index.html and redeploy.</p>
+  <div class="head">
+    <h1>Testing pipeline — status</h1>
+    <div class="legend">
+      <span><i style="background:var(--done)"></i>done</span>
+      <span><i style="background:var(--run)"></i>running</span>
+      <span><i style="background:var(--queue)"></i>queued</span>
+      <span id="tally"></span>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="bar"><button onclick="allOpen(1)">Expand</button><button onclick="allOpen(0)">Collapse</button></div>
+    <div id="tree"></div>
+  </div>
 </div>
 
 <script>
-// ============ edit this list to update the board ============
-const RUNS = [
-  // status: "running" | "done" | "queued"
-  {status:"queued",  name:"GLM-5.2 synthesis at scale", model:"GLM-5.2 (Lumen)", scope:"8 cells · k=3 · N cars", result:"adapter ready; smoke passed 8/8"},
-  {status:"queued",  name:"GLM-5.2 D/I dialogue adapter", model:"GLM-5.2 (Lumen)", scope:"multi-turn + tools", result:"tool-calling confirmed; building"},
-  {status:"queued",  name:"Full-dataset synthesis via llmflux", model:"open models", scope:"Campus Cluster batch", result:"free on sridhar-ic; planned"},
-  {status:"queued",  name:"More cars to firm up dialogue result", model:"Opus 4.8 + GPT-5.5", scope:"beyond 10 cars", result:"planned (small-n)"},
-
-  {status:"done", name:"Signals P1 / P2 / P3", model:"—", scope:"eval-200", result:"P3 MoE best: RMSE $8.9k / MAPE 20.6%"},
-  {status:"done", name:"Synthesis ablation S1–S8", model:"Opus 4.8 + compiler", scope:"50 cars · k=3", result:"s7 best RMSE ~$5.6k / 22.8%"},
-  {status:"done", name:"D/I dialogues (v7, DB operator)", model:"Opus 4.8 + GPT-5.5", scope:"10 cars · 4 cond.", result:"D·withDB 13.7% best; dialogue ≈ neutral"},
-  {status:"done", name:"D-only, no-DB operator (v8)", model:"Opus 4.8 + GPT-5.5", scope:"10 cars · 2 cond.", result:"D·noDB 15.4% — did not improve"},
-  {status:"done", name:"GLM-5.2 synthesis smoke", model:"GLM-5.2 (Lumen)", scope:"1 car · 8 cells", result:"8/8 parse · ~0.069 coins/car"},
+const RAIL=["#1B4A63","#2E6E8E","#4B8AA8","#7FB0C4","#A8CAD8","#C6DCE5"];
+const SYNTH=["s1 ATT only","s2 +P1–P4","s3 +step","s4 +checklist","s5 +padding","s6 +ATTc","s7 +P1–P4+ATTc","s8 +Role"];
+const LEVELS=[
+  {name:"Model",   opts:["Qwen 3.6","Qwen 3.8 (27b)","GLM 5.2","GLM 5.3"]},
+  {name:"Tokens",  opts:["2k","4k"]},
+  {name:"Features",opts:["None","Code","Search","Code+Search"]},
+  {name:"Synthesis",opts:SYNTH},
+  {name:"Dialogue",opts:["S5 × D/I","S7 × D/I"]},
 ];
-// ============================================================
-
-const GROUPS = [["running","Running"],["done","Done"],["queued","Queued / next"]];
-function render(){
-  const board = document.getElementById("board");
-  board.innerHTML = "";
-  for(const [key,label] of GROUPS){
-    const rows = RUNS.filter(r => r.status === key);
-    if(!rows.length) continue;
-    const h = document.createElement("h2"); h.textContent = label + " (" + rows.length + ")";
-    board.appendChild(h);
-    const t = document.createElement("table");
-    t.innerHTML = "<tr><th>Run</th><th>Model</th><th>Scope</th><th>Result / note</th></tr>";
-    for(const r of rows){
-      const tr = document.createElement("tr"); tr.className = key;
-      tr.innerHTML = `<td><span class="dot"></span>${esc(r.name)}</td><td class="st">${esc(r.model)}</td><td class="st">${esc(r.scope)}</td><td>${esc(r.result)}</td>`;
-      t.appendChild(tr);
-    }
-    board.appendChild(t);
-  }
-  const n = s => RUNS.filter(r=>r.status===s).length;
-  document.getElementById("counts").innerHTML = `<b>${n("done")}</b> done · <b>${n("running")}</b> running · <b>${n("queued")}</b> queued`;
+// status rule: GLM 5.2 synthesis (no tools) = done (smoke); GLM 5.2 dialogue = running; else queued.
+function statusOf(path){                       // path = labels root→node
+  if(path[0]!=="GLM 5.2") return "queued";
+  const last=path[path.length-1];
+  if(SYNTH.includes(last)) return "done";
+  if(last==="S5 × D/I"||last==="S7 × D/I") return "running";
+  return null;                                 // internal GLM node — colour rolls up from kids
 }
-function esc(s){ return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
-
-// plain client-side gate (soft)
-const ACCESS_WORD = "anton-bat-2026";
-function go(){
-  if(document.getElementById("pw").value.trim() === ACCESS_WORD){
-    sessionStorage.setItem("cav_ok","1");
-    document.getElementById("gate").style.display="none";
-    document.getElementById("app").style.display="block";
-    render();
-  } else document.getElementById("err").textContent = "Wrong access word.";
+function build(lvls){
+  const make=(label,depth,path)=>{
+    const p=path.concat(label===null?[]:[label]);
+    const node={label,depth,path:p,open:depth<1,kids:[]};
+    if(depth<lvls.length) node.kids=lvls[depth].opts.map(o=>make(o,depth+1,p));
+    node.status=statusOf(p);
+    return node;
+  };
+  const r=make("All runs",0,[]); r.open=true; return r;
 }
+function roll(n){ // rollup: internal node status = running if any kid running, else done if all done, else queued
+  if(!n.kids.length) return n.status||"queued";
+  const s=n.kids.map(roll);
+  n.status = s.includes("running")?"running": s.every(x=>x==="done")?"done":"queued";
+  return n.status;
+}
+let root=build(LEVELS); roll(root);
+function el(n){
+  const w=document.createElement("div"); w.className="node";
+  const row=document.createElement("div"); row.className="row";
+  const tw=document.createElement("button"); tw.className="tw"+(n.kids.length?"":" leaf");
+  tw.textContent=n.kids.length?(n.open?"▼":"▶"):"·";
+  if(n.kids.length) tw.onclick=()=>{n.open=!n.open;draw();};
+  row.appendChild(tw);
+  const dot=document.createElement("span"); dot.className="dot";
+  dot.style.background=n.status==="done"?"var(--done)":n.status==="running"?"var(--run)":"var(--queue)";
+  row.appendChild(dot);
+  const lbl=document.createElement("span"); lbl.className="lbl"; lbl.textContent=n.label;
+  lbl.style.color=RAIL[Math.min(n.depth,RAIL.length-1)]; row.appendChild(lbl);
+  if(n.kids.length){const c=document.createElement("span");c.className="cnt";c.textContent=leaves(n);row.appendChild(c);}
+  w.appendChild(row);
+  if(n.kids.length&&n.open){const k=document.createElement("div");k.className="kids";
+    k.style.borderLeftColor=RAIL[Math.min(n.depth,RAIL.length-1)]+"55";
+    n.kids.forEach(c=>k.appendChild(el(c)));w.appendChild(k);}
+  return w;
+}
+function leaves(n){return n.kids.length?n.kids.reduce((a,c)=>a+leaves(c),0):1;}
+function walk(n,f){f(n);n.kids.forEach(c=>walk(c,f));}
+function allOpen(v){walk(root,n=>n.open=!!v);root.open=true;draw();}
+function draw(){const t=document.getElementById("tree");t.innerHTML="";t.appendChild(el(root));
+  let d=0,r=0,q=0;walk(root,n=>{if(!n.kids.length){n.status==="done"?d++:n.status==="running"?r++:q++;}});
+  document.getElementById("tally").textContent=`${d} done · ${r} running · ${q} queued · ${d+r+q} total`;}
+
+const ACCESS_WORD="anton-bat-2026";
+function go(){if(document.getElementById("pw").value.trim()===ACCESS_WORD){sessionStorage.setItem("cav_ok","1");
+  document.getElementById("gate").style.display="none";document.getElementById("app").style.display="block";draw();}
+  else document.getElementById("err").textContent="Wrong access word.";}
 document.getElementById("pw").addEventListener("keydown",e=>{if(e.key==="Enter")go();});
-if(sessionStorage.getItem("cav_ok")==="1"){ document.getElementById("gate").style.display="none"; document.getElementById("app").style.display="block"; render(); }
+if(sessionStorage.getItem("cav_ok")==="1"){document.getElementById("gate").style.display="none";document.getElementById("app").style.display="block";draw();}
 </script>
