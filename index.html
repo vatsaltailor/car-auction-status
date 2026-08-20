@@ -1,124 +1,771 @@
-<!doctype html>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Testing pipeline — status</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Testing ladder</title>
 <style>
-  :root{--paper:#F6F8FA;--card:#FFF;--ink:#14202B;--soft:#4A5B69;--steel:#2E6E8E;--rule:#D8E0E7;--dim:#9BAAB6;
-    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-    --done:#16A34A;--run:#2563EB;--queue:#C6CDD4;}
-  *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px}
-  .head{background:var(--card);border-bottom:1px solid var(--rule);padding:14px 20px}
-  .head h1{font-family:var(--sans);font-weight:600;font-size:18px;margin:0}
-  .legend{font-family:var(--mono);font-size:11.5px;color:var(--soft);margin-top:8px;display:flex;gap:16px;flex-wrap:wrap}
+  :root{
+    --paper:#F6F8FA;
+    --card:#FFFFFF;
+    --ink:#14202B;
+    --ink-soft:#4A5B69;
+    --steel:#2E6E8E;
+    --steel-deep:#1B4A63;
+    --rule:#D8E0E7;
+    --plum:#6E4B8F;
+    --dim:#9BAAB6;
+    --display:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.45;
+  }
+  button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
+  textarea,input{font-family:inherit;font-size:inherit;color:inherit}
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    border-bottom:1px solid var(--rule);
+    background:var(--card);
+    padding:18px 22px 14px;
+  }
+  .masthead h1{
+    font-family:var(--display);
+    font-weight:600;
+    font-size:26px;
+    letter-spacing:-.01em;
+    margin:0 0 10px;
+  }
+  .tally{
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--ink-soft);
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:14px;
+  }
+  .tally b{color:var(--steel-deep);font-weight:600}
+  .tally .kept{color:var(--plum)}
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    margin-top:11px;
+    font-family:var(--mono);
+    font-size:11.5px;
+    letter-spacing:.02em;
+    color:var(--ink-soft);
+  }
   .legend span{display:flex;align-items:center;gap:6px}
-  .legend i{width:9px;height:9px;border-radius:50%;display:block}
-  .wrap{padding:16px 20px 60px;max-width:820px}
-  .bar{display:flex;gap:8px;margin-bottom:10px}
-  .bar button{font-family:var(--mono);font-size:12px;border:1px solid var(--rule);background:var(--card);color:var(--steel);border-radius:4px;padding:4px 9px;cursor:pointer}
-  .node .kids{margin-left:12px;padding-left:12px;border-left:1.5px solid var(--rule)}
-  .row{display:flex;align-items:center;gap:7px;padding:2px 4px;border-radius:4px}
+  .legend i{width:16px;height:3px;border-radius:2px;display:block}
+
+  /* ---------- shell ---------- */
+  .shell{display:grid;grid-template-columns:320px 1fr;min-height:calc(100vh - 118px)}
+  .factors{
+    border-right:1px solid var(--rule);
+    background:var(--card);
+    padding:18px;
+    overflow:auto;
+  }
+  .canvas{padding:18px 22px 60px;overflow:auto}
+
+  .panel-head{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--dim);
+    margin:0 0 12px;
+  }
+  .factor{margin-bottom:16px}
+  .factor-top{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+  .factor-num{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--card);
+    background:var(--steel);
+    width:18px;height:18px;
+    display:grid;place-items:center;
+    border-radius:3px;
+    flex:none;
+  }
+  .factor-name{
+    flex:1;
+    border:none;
+    border-bottom:1px solid transparent;
+    background:none;
+    font-family:var(--display);
+    font-size:16px;
+    padding:1px 0;
+  }
+  .factor-name:hover{border-bottom-color:var(--rule)}
+  .factor-name:focus{outline:none;border-bottom-color:var(--steel)}
+  .factor textarea{
+    width:100%;
+    min-height:74px;
+    resize:vertical;
+    border:1px solid var(--rule);
+    border-radius:4px;
+    padding:8px 9px;
+    font-family:var(--mono);
+    font-size:12.5px;
+    line-height:1.6;
+    background:var(--paper);
+  }
+  .factor textarea:focus{outline:none;border-color:var(--steel);background:var(--card)}
+  .factor-foot{
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:4px;
+  }
+  .linky{background:none;border:none;padding:0;color:var(--steel);text-decoration:underline;font-family:var(--mono);font-size:11px}
+  .linky:hover{color:var(--plum)}
+  .factor-tools{display:flex;align-items:center;gap:9px}
+  .factor-tools .arrow{text-decoration:none;font-size:13px;line-height:1}
+
+  .btn{
+    border:1px solid var(--steel-deep);
+    background:var(--steel-deep);
+    color:var(--card);
+    border-radius:4px;
+    padding:8px 12px;
+    font-size:13.5px;
+  }
+  .btn:hover{background:var(--steel)}
+  .btn.ghost{background:none;color:var(--steel-deep);border-color:var(--rule)}
+  .btn.ghost:hover{background:var(--paper);border-color:var(--steel)}
+  .btn-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+
+  /* ---------- tree ---------- */
+  .toolbar{
+    display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+    margin-bottom:16px;
+  }
+  .toolbar .sep{width:1px;height:22px;background:var(--rule)}
+  .node .kids{margin-left:13px;padding-left:13px;border-left:1.5px solid var(--rule)}
+  .row{
+    display:flex;align-items:center;gap:8px;
+    padding:2px 6px 2px 0;
+    border-radius:4px;
+  }
   .row:hover{background:var(--card)}
-  .tw{border:none;background:none;width:16px;color:var(--dim);font-size:9px;cursor:pointer;flex:none}
-  .tw.leaf{color:var(--rule);cursor:default}
-  .lbl{font-family:var(--mono);font-size:13px}
-  .dot{width:9px;height:9px;border-radius:50%;flex:none}
-  .cnt{font-family:var(--mono);font-size:11px;color:var(--dim)}
-  #app{display:none}
-  #gate{position:fixed;inset:0;background:#1B4A63;display:grid;place-items:center;padding:20px}
-  #gate .box{background:#fff;border-radius:8px;padding:24px;width:min(340px,100%);text-align:center}
-  #gate input{width:100%;padding:10px;border:1px solid #ccc;border-radius:5px;margin:12px 0;font-size:14px}
-  #gate button{width:100%;padding:10px;border:none;border-radius:5px;background:#1B4A63;color:#fff;cursor:pointer}
-  #gate .err{color:#dc2626;font-size:12px;height:14px;margin-top:6px}
+  .twist{
+    border:none;background:none;
+    width:18px;height:18px;flex:none;
+    display:grid;place-items:center;
+    color:var(--dim);font-size:10px;
+    border-radius:3px;
+  }
+  .twist:hover{color:var(--steel);background:var(--paper)}
+  .twist.leaf{cursor:default;color:var(--rule)}
+  .label{
+    font-family:var(--mono);
+    font-size:13px;
+    padding:2px 5px;
+    border-radius:3px;
+    min-width:20px;
+    outline:none;
+  }
+  .label:hover{background:var(--paper);box-shadow:inset 0 0 0 1px var(--rule)}
+  .label:focus{background:var(--card);box-shadow:inset 0 0 0 1px var(--steel)}
+  .count{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--dim);
+    flex:none;
+  }
+  .tag{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.04em;
+    color:var(--card);
+    background:var(--plum);
+    padding:1px 8px;
+    border-radius:9px;
+    flex:none;
+    min-width:18px;
+    outline:none;
+  }
+  .tag:focus{background:var(--card);color:var(--plum);box-shadow:inset 0 0 0 1px var(--plum)}
+  .note-text{
+    font-family:var(--sans);
+    font-size:12px;
+    font-style:italic;
+    color:var(--ink-soft);
+    padding:1px 5px;
+    border-radius:3px;
+    flex:1;
+    min-width:40px;
+    outline:none;
+  }
+  .note-text:focus{background:var(--card);font-style:normal;box-shadow:inset 0 0 0 1px var(--rule)}
+  .node.cut > .row .tag{background:var(--dim)}
+  .acts{display:flex;gap:2px;opacity:0;transition:opacity .12s}
+  .row:hover .acts,.row:focus-within .acts{opacity:1}
+  @media (hover:none){.acts{opacity:1}}
+  .acts button{
+    border:none;background:none;
+    width:22px;height:22px;
+    display:grid;place-items:center;
+    border-radius:3px;
+    color:var(--dim);
+    font-size:13px;line-height:1;
+  }
+  .acts button:hover{background:var(--paper);color:var(--steel-deep)}
+  .acts button.kill:hover{color:#B03A2E}
+  .node.cut > .row .label{color:var(--dim);text-decoration:line-through}
+  .node.cut > .row .count{color:var(--dim)}
+  .node.cut .kids{opacity:.42}
+  .node.cut > .row .acts .cut-btn{color:var(--plum);opacity:1}
+
+  /* ---------- overlay ---------- */
+  .overlay{
+    position:fixed;inset:0;
+    background:rgba(20,32,43,.42);
+    display:none;place-items:center;
+    padding:20px;z-index:20;
+  }
+  .overlay.on{display:grid}
+  .sheet{
+    background:var(--card);
+    border-radius:6px;
+    width:min(760px,100%);
+    max-height:82vh;
+    display:flex;flex-direction:column;
+    box-shadow:0 18px 50px rgba(20,32,43,.28);
+  }
+  .sheet header{
+    padding:14px 18px;border-bottom:1px solid var(--rule);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .sheet h2{margin:0;font-family:var(--display);font-size:18px;font-weight:600}
+  .sheet textarea{
+    flex:1;min-height:320px;border:none;padding:14px 18px;resize:none;
+    font-family:var(--mono);font-size:12px;line-height:1.55;outline:none;
+  }
+  .sheet footer{padding:12px 18px;border-top:1px solid var(--rule);display:flex;gap:8px;justify-content:flex-end}
+  .note{font-family:var(--mono);font-size:11px;color:var(--dim);padding:0 18px 10px}
+
+  :focus-visible{outline:2px solid var(--plum);outline-offset:1px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  @media (max-width:860px){
+    .shell{grid-template-columns:1fr}
+    .factors{border-right:none;border-bottom:1px solid var(--rule)}
+  }
 </style>
 
-<div id="gate"><div class="box">
-  <b>Testing pipeline</b>
-  <input id="pw" type="password" placeholder="access word" autofocus autocomplete="off">
-  <button onclick="go()">View</button><div class="err" id="err"></div>
-</div></div>
+<div class="masthead">
+  <h1 contenteditable="true" id="title">Testing ladder</h1>
+  <div class="tally" id="tally"></div>
+  <div class="legend" id="legend"></div>
+</div>
 
-<div id="app">
-  <div class="head">
-    <h1>Testing pipeline — status</h1>
-    <div class="legend">
-      <span><i style="background:var(--done)"></i>done</span>
-      <span><i style="background:var(--run)"></i>running</span>
-      <span><i style="background:var(--queue)"></i>queued</span>
-      <span id="tally"></span>
+<div class="shell">
+  <aside class="factors">
+    <p class="panel-head">Factors — one option per line</p>
+    <div id="factorList"></div>
+    <div class="btn-row">
+      <button class="btn ghost" id="addLevel">Add factor</button>
     </div>
-  </div>
-  <div class="wrap">
-    <div class="bar"><button onclick="allOpen(1)">Expand</button><button onclick="allOpen(0)">Collapse</button></div>
+    <div class="btn-row">
+      <button class="btn" id="build">Build tree</button>
+    </div>
+    <p class="note" style="padding:8px 0 0">Building replaces the tree below and discards any pruning.</p>
+  </aside>
+
+  <main class="canvas">
+    <div class="toolbar">
+      <button class="btn ghost" id="expandAll">Expand all</button>
+      <button class="btn ghost" id="collapseAll">Collapse all</button>
+      <span class="sep"></span>
+      <button class="btn ghost" id="expandTo">Expand to level…</button>
+      <span class="sep"></span>
+      <button class="btn ghost" id="revealTags">Reveal tagged</button>
+      <button class="btn ghost" id="listTags">Version list</button>
+      <span class="sep"></span>
+      <button class="btn ghost" id="expJson">Export JSON</button>
+      <button class="btn ghost" id="expCsv">Export runs (CSV)</button>
+      <button class="btn ghost" id="expOutline">Export outline</button>
+      <button class="btn ghost" id="impJson">Import JSON</button>
+    </div>
     <div id="tree"></div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <header>
+      <h2 id="sheetTitle">Export</h2>
+      <button class="btn ghost" id="closeSheet">Close</button>
+    </header>
+    <textarea id="sheetText" spellcheck="false"></textarea>
+    <p class="note" id="sheetNote"></p>
+    <footer>
+      <button class="btn ghost" id="copyText">Copy</button>
+      <button class="btn ghost" id="downloadText">Download</button>
+      <button class="btn" id="applyImport" style="display:none">Load into tree</button>
+    </footer>
   </div>
 </div>
 
 <script>
-const RAIL=["#1B4A63","#2E6E8E","#4B8AA8","#7FB0C4","#A8CAD8","#C6DCE5"];
-const SYNTH=["s1 ATT only","s2 +P1–P4","s3 +step","s4 +checklist","s5 +padding","s6 +ATTc","s7 +P1–P4+ATTc","s8 +Role"];
-const LEVELS=[
-  {name:"Model",   opts:["Qwen 3.6","Qwen 3.8 (27b)","GLM 5.2","GLM 5.3"]},
-  {name:"Tokens",  opts:["2k","4k"]},
-  {name:"Features",opts:["None","Code","Search","Code+Search"]},
-  {name:"Synthesis",opts:SYNTH},
-  {name:"Dialogue",opts:["S5 × D/I","S7 × D/I"]},
-];
-// status rule: GLM 5.2 synthesis (no tools) = done (smoke); GLM 5.2 dialogue = running; else queued.
-function statusOf(path){                       // path = labels root→node
-  if(path[0]!=="GLM 5.2") return "queued";
-  const last=path[path.length-1];
-  if(SYNTH.includes(last)) return "done";
-  if(last==="S5 × D/I"||last==="S7 × D/I") return "running";
-  return null;                                 // internal GLM node — colour rolls up from kids
-}
-function build(lvls){
-  const make=(label,depth,path)=>{
-    const p=path.concat(label===null?[]:[label]);
-    const node={label,depth,path:p,open:depth<1,kids:[]};
-    if(depth<lvls.length) node.kids=lvls[depth].opts.map(o=>make(o,depth+1,p));
-    node.status=statusOf(p);
+const RAIL = ["#1B4A63","#2E6E8E","#4B8AA8","#7FB0C4","#A8CAD8","#C6DCE5"];
+let uid = 0;
+const nid = () => "n" + (++uid);
+
+let state = {
+  levels: [
+    {name:"Model", options:["Qwen 3.6","Qwen 3.8 (27b)","GLM 5.2","GLM 5.3"]},
+    {name:"Resources", options:["Tokens 2k","Tokens 4k"]},
+    {name:"Features", options:["None","Code","Search","Code + search"]},
+    {name:"Synthesis prompt", options:[
+      "ATT Only",
+      "ATT + P1–P4",
+      "ATT + P1–P4 + step-by-step trigger",
+      "ATT + P1–P4 + structured checklist (legacy base)",
+      "ATT + P1–P4 + padding (length-matched to S4)",
+      "ATT + ATTc",
+      "ATT + P1–P4 + ATTc",
+      "ATT + P1-P4 + ATTc + Role"
+    ]},
+    {name:"Dialogue style", options:["S5 * D/I","S7 * D/I"]}
+  ],
+  root: null
+};
+
+/* ---------- tree ---------- */
+function buildTree(levels){
+  const make = (label, depth) => {
+    const node = {id:nid(), label, tag:"", note:"", cut:false, open:depth < 1, children:[]};
+    if(depth < levels.length){
+      node.children = levels[depth].options
+        .filter(o => o.trim() !== "")
+        .map(o => make(o, depth + 1));
+    }
     return node;
   };
-  const r=make("All runs",0,[]); r.open=true; return r;
+  const root = make("All runs", 0);
+  root.open = true;
+  return root;
 }
-function roll(n){ // rollup: internal node status = running if any kid running, else done if all done, else queued
-  if(!n.kids.length) return n.status||"queued";
-  const s=n.kids.map(roll);
-  n.status = s.includes("running")?"running": s.every(x=>x==="done")?"done":"queued";
-  return n.status;
-}
-let root=build(LEVELS); roll(root);
-function el(n){
-  const w=document.createElement("div"); w.className="node";
-  const row=document.createElement("div"); row.className="row";
-  const tw=document.createElement("button"); tw.className="tw"+(n.kids.length?"":" leaf");
-  tw.textContent=n.kids.length?(n.open?"▼":"▶"):"·";
-  if(n.kids.length) tw.onclick=()=>{n.open=!n.open;draw();};
-  row.appendChild(tw);
-  const dot=document.createElement("span"); dot.className="dot";
-  dot.style.background=n.status==="done"?"var(--done)":n.status==="running"?"var(--run)":"var(--queue)";
-  row.appendChild(dot);
-  const lbl=document.createElement("span"); lbl.className="lbl"; lbl.textContent=n.label;
-  lbl.style.color=RAIL[Math.min(n.depth,RAIL.length-1)]; row.appendChild(lbl);
-  if(n.kids.length){const c=document.createElement("span");c.className="cnt";c.textContent=leaves(n);row.appendChild(c);}
-  w.appendChild(row);
-  if(n.kids.length&&n.open){const k=document.createElement("div");k.className="kids";
-    k.style.borderLeftColor=RAIL[Math.min(n.depth,RAIL.length-1)]+"55";
-    n.kids.forEach(c=>k.appendChild(el(c)));w.appendChild(k);}
-  return w;
-}
-function leaves(n){return n.kids.length?n.kids.reduce((a,c)=>a+leaves(c),0):1;}
-function walk(n,f){f(n);n.kids.forEach(c=>walk(c,f));}
-function allOpen(v){walk(root,n=>n.open=!!v);root.open=true;draw();}
-function draw(){const t=document.getElementById("tree");t.innerHTML="";t.appendChild(el(root));
-  let d=0,r=0,q=0;walk(root,n=>{if(!n.kids.length){n.status==="done"?d++:n.status==="running"?r++:q++;}});
-  document.getElementById("tally").textContent=`${d} done · ${r} running · ${q} queued · ${d+r+q} total`;}
 
-const ACCESS_WORD="anton-bat-2026";
-function go(){if(document.getElementById("pw").value.trim()===ACCESS_WORD){sessionStorage.setItem("cav_ok","1");
-  document.getElementById("gate").style.display="none";document.getElementById("app").style.display="block";draw();}
-  else document.getElementById("err").textContent="Wrong access word.";}
-document.getElementById("pw").addEventListener("keydown",e=>{if(e.key==="Enter")go();});
-if(sessionStorage.getItem("cav_ok")==="1"){document.getElementById("gate").style.display="none";document.getElementById("app").style.display="block";draw();}
+function leaves(node, alive){
+  const live = alive && !node.cut;
+  if(!node.children.length) return {total:1, kept:live ? 1 : 0};
+  let t = 0, k = 0;
+  for(const c of node.children){
+    const r = leaves(c, live);
+    t += r.total; k += r.kept;
+  }
+  return {total:t, kept:k};
+}
+
+function find(id, node = state.root, parent = null){
+  if(node.id === id) return {node, parent};
+  for(const c of node.children){
+    const hit = find(id, c, node);
+    if(hit) return hit;
+  }
+  return null;
+}
+
+function walk(node, fn){ fn(node); node.children.forEach(c => walk(c, fn)); }
+
+/* ---------- render ---------- */
+function renderTree(){
+  const host = document.getElementById("tree");
+  host.innerHTML = "";
+  host.appendChild(nodeEl(state.root, 0));
+  renderTally();
+}
+
+function nodeEl(node, depth){
+  const wrap = document.createElement("div");
+  wrap.className = "node" + (node.cut ? " cut" : "");
+
+  const row = document.createElement("div");
+  row.className = "row";
+
+  const tw = document.createElement("button");
+  tw.className = "twist" + (node.children.length ? "" : " leaf");
+  tw.textContent = node.children.length ? (node.open ? "▼" : "▶") : "·";
+  if(node.children.length){
+    tw.title = node.open ? "Collapse" : "Expand";
+    tw.onclick = () => { node.open = !node.open; renderTree(); };
+  }else{
+    tw.tabIndex = -1;
+  }
+  row.appendChild(tw);
+
+  const label = document.createElement("span");
+  label.className = "label";
+  label.contentEditable = "true";
+  label.spellcheck = false;
+  label.textContent = node.label;
+  label.style.color = node.cut ? "" : RAIL[Math.min(depth, RAIL.length - 1)];
+  label.onblur = () => { node.label = label.textContent.trim() || "untitled"; renderTally(); };
+  label.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); label.blur(); } };
+  row.appendChild(label);
+
+  const tag = document.createElement("span");
+  tag.className = "tag";
+  tag.contentEditable = "true";
+  tag.spellcheck = false;
+  tag.textContent = node.tag || "";
+  if(!node.tag) tag.style.display = "none";
+  tag.onblur = () => { node.tag = tag.textContent.trim(); if(!node.tag){ renderTree(); } else { renderTally(); } };
+  tag.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); tag.blur(); } };
+  row.appendChild(tag);
+
+  if(node.children.length){
+    const c = leaves(node, true);
+    const count = document.createElement("span");
+    count.className = "count";
+    count.textContent = c.kept === c.total ? `${c.total}` : `${c.kept}/${c.total}`;
+    row.appendChild(count);
+  }
+
+  const note = document.createElement("span");
+  note.className = "note-text";
+  note.contentEditable = "true";
+  note.spellcheck = false;
+  note.textContent = node.note || "";
+  if(!node.note) note.style.display = "none";
+  note.onblur = () => { node.note = note.textContent.trim(); if(!node.note) renderTree(); };
+  note.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); note.blur(); } };
+  row.appendChild(note);
+
+  const acts = document.createElement("span");
+  acts.className = "acts";
+  acts.appendChild(mkBtn("v", node.tag ? "Edit version tag" : "Add version tag", "", () => {
+    tag.style.display = "";
+    if(!tag.textContent) tag.textContent = "v1";
+    focusInto(tag);
+  }));
+  acts.appendChild(mkBtn("✎", node.note ? "Edit note" : "Add note", "", () => {
+    note.style.display = "";
+    focusInto(note);
+  }));
+  acts.appendChild(mkBtn("⊘", node.cut ? "Include branch" : "Exclude branch", "cut-btn", () => {
+    node.cut = !node.cut; renderTree();
+  }));
+  acts.appendChild(mkBtn("＋", "Add child", "", () => {
+    node.children.push({id:nid(), label:"new", cut:false, open:false, children:[]});
+    node.open = true; renderTree();
+  }));
+  if(depth > 0){
+    acts.appendChild(mkBtn("⧉", "Duplicate branch", "", () => {
+      const {parent} = find(node.id);
+      const copy = clone(node);
+      parent.children.splice(parent.children.indexOf(node) + 1, 0, copy);
+      renderTree();
+    }));
+    acts.appendChild(mkBtn("✕", "Delete branch", "kill", () => {
+      const {parent} = find(node.id);
+      parent.children.splice(parent.children.indexOf(node), 1);
+      renderTree();
+    }));
+  }
+  row.appendChild(acts);
+  wrap.appendChild(row);
+
+  if(node.children.length && node.open){
+    const kids = document.createElement("div");
+    kids.className = "kids";
+    kids.style.borderLeftColor = RAIL[Math.min(depth, RAIL.length - 1)] + "55";
+    node.children.forEach(c => kids.appendChild(nodeEl(c, depth + 1)));
+    wrap.appendChild(kids);
+  }
+  return wrap;
+}
+
+function mkBtn(glyph, title, cls, fn){
+  const b = document.createElement("button");
+  b.textContent = glyph; b.title = title; b.setAttribute("aria-label", title);
+  if(cls) b.className = cls;
+  b.onclick = fn;
+  return b;
+}
+
+function clone(node){
+  return {id:nid(), label:node.label, tag:node.tag || "", note:node.note || "",
+          cut:node.cut, open:node.open, children:node.children.map(clone)};
+}
+
+function focusInto(el){
+  el.focus();
+  const r = document.createRange();
+  r.selectNodeContents(el);
+  const s = getSelection();
+  s.removeAllRanges();
+  s.addRange(r);
+}
+
+function tagged(){
+  const out = [];
+  (function rec(node, path, alive){
+    const live = alive && !node.cut;
+    const here = path.concat(node === state.root ? [] : [node.label]);
+    if(node.tag || node.note) out.push({tag:node.tag, note:node.note, path:here, live});
+    node.children.forEach(c => rec(c, here, live));
+  })(state.root, [], true);
+  return out;
+}
+
+function renderTally(){
+  const c = leaves(state.root, true);
+  const math = state.levels.map(l => l.options.filter(o => o.trim()).length).filter(n => n > 0);
+  document.getElementById("tally").innerHTML =
+    `<span>${math.join(" × ")} = <b>${math.reduce((a,b)=>a*b,1)}</b> paths defined</span>` +
+    `<span>in tree <b>${c.total}</b></span>` +
+    `<span class="kept">kept <b class="kept">${c.kept}</b></span>` +
+    `<span>pruned ${c.total - c.kept}</span>` +
+    `<span>tagged <b>${tagged().length}</b></span>`;
+
+  document.getElementById("legend").innerHTML = state.levels
+    .map((l,i) => `<span><i style="background:${RAIL[Math.min(i+1,RAIL.length-1)]}"></i>${i+1} ${esc(l.name)}</span>`)
+    .join("");
+}
+
+function esc(s){ return s.replace(/[&<>]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[ch])); }
+
+/* ---------- factors panel ---------- */
+function renderFactors(){
+  const host = document.getElementById("factorList");
+  host.innerHTML = "";
+  state.levels.forEach((lvl, i) => {
+    const box = document.createElement("div");
+    box.className = "factor";
+
+    const top = document.createElement("div");
+    top.className = "factor-top";
+    const num = document.createElement("span");
+    num.className = "factor-num";
+    num.textContent = i + 1;
+    num.style.background = RAIL[Math.min(i + 1, RAIL.length - 1)];
+    const name = document.createElement("input");
+    name.className = "factor-name";
+    name.value = lvl.name;
+    name.oninput = () => { lvl.name = name.value; renderTally(); };
+    top.appendChild(num); top.appendChild(name);
+    box.appendChild(top);
+
+    const ta = document.createElement("textarea");
+    ta.value = lvl.options.join("\n");
+    ta.spellcheck = false;
+    ta.oninput = () => {
+      lvl.options = ta.value.split("\n").map(s => s.trim()).filter(Boolean);
+      foot.firstChild.textContent = `${lvl.options.length} options`;
+      renderTally();
+    };
+    box.appendChild(ta);
+
+    const foot = document.createElement("div");
+    foot.className = "factor-foot";
+    const cnt = document.createElement("span");
+    cnt.textContent = `${lvl.options.length} options`;
+
+    const tools = document.createElement("span");
+    tools.className = "factor-tools";
+    if(i > 0) tools.appendChild(linkBtn("↑", "Move up", "arrow", () => moveLevel(i, i - 1)));
+    if(i < state.levels.length - 1) tools.appendChild(linkBtn("↓", "Move down", "arrow", () => moveLevel(i, i + 1)));
+    tools.appendChild(linkBtn("insert above", "Insert a new factor above this one", "", () => {
+      state.levels.splice(i, 0, {name:"New factor", options:["option A","option B"]});
+      renderFactors(); renderTally();
+    }));
+    tools.appendChild(linkBtn("remove", "Remove this factor", "", () => {
+      state.levels.splice(i, 1); renderFactors(); renderTally();
+    }));
+
+    foot.appendChild(cnt); foot.appendChild(tools);
+    box.appendChild(foot);
+
+    host.appendChild(box);
+  });
+}
+
+function linkBtn(text, title, cls, fn){
+  const b = document.createElement("button");
+  b.className = "linky" + (cls ? " " + cls : "");
+  b.textContent = text;
+  b.title = title;
+  b.setAttribute("aria-label", title);
+  b.onclick = fn;
+  return b;
+}
+
+function moveLevel(from, to){
+  const [lvl] = state.levels.splice(from, 1);
+  state.levels.splice(to, 0, lvl);
+  renderFactors(); renderTally();
+}
+
+/* ---------- export / import ---------- */
+let sheetFilename = "testing-ladder.json";
+
+function openSheet(title, text, filename, note, importMode){
+  document.getElementById("sheetTitle").textContent = title;
+  document.getElementById("sheetText").value = text;
+  document.getElementById("sheetNote").textContent = note || "";
+  document.getElementById("applyImport").style.display = importMode ? "" : "none";
+  sheetFilename = filename;
+  document.getElementById("overlay").classList.add("on");
+}
+
+function keptRuns(){
+  const rows = [];
+  (function rec(node, path, tags, notes, alive){
+    const live = alive && !node.cut;
+    const t = node.tag ? tags.concat(node.tag) : tags;
+    const n = node.note ? notes.concat(node.note) : notes;
+    if(!node.children.length){ if(live) rows.push({path, tags:t, notes:n}); return; }
+    node.children.forEach(c => rec(c, path.concat(c.label), t, n, live));
+  })(state.root, [], [], [], true);
+  return rows;
+}
+
+function csvCell(v){ return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+
+function outline(){
+  const out = [];
+  (function rec(node, depth, alive){
+    const live = alive && !node.cut;
+    out.push("  ".repeat(depth) + (depth ? "- " : "# ") + node.label
+      + (node.tag ? "  [" + node.tag + "]" : "")
+      + (node.note ? "  — " + node.note : "")
+      + (live ? "" : "   [excluded]"));
+    node.children.forEach(c => rec(c, depth + 1, live));
+  })(state.root, 0, true);
+  return out.join("\n");
+}
+
+/* ---------- wiring ---------- */
+document.getElementById("build").onclick = () => {
+  if(!confirm("Rebuild the tree from the factors? Current pruning is discarded.")) return;
+  state.root = buildTree(state.levels);
+  renderTree();
+};
+document.getElementById("addLevel").onclick = () => {
+  state.levels.push({name:"New factor", options:["option A","option B"]});
+  renderFactors(); renderTally();
+};
+document.getElementById("expandAll").onclick = () => { walk(state.root, n => n.open = true); renderTree(); };
+document.getElementById("collapseAll").onclick = () => {
+  walk(state.root, n => n.open = false); state.root.open = true; renderTree();
+};
+document.getElementById("expandTo").onclick = () => {
+  const d = parseInt(prompt("Expand down to which level? (1–" + state.levels.length + ")", "2"), 10);
+  if(!d || d < 1) return;
+  (function rec(n, depth){ n.open = depth < d; n.children.forEach(c => rec(c, depth + 1)); })(state.root, 0);
+  state.root.open = true;
+  renderTree();
+};
+document.getElementById("revealTags").onclick = () => {
+  walk(state.root, n => n.open = false);
+  (function rec(node){
+    let hit = node.tag || node.note;
+    node.children.forEach(c => { if(rec(c)) hit = true; });
+    if(hit) node.open = true;
+    return hit;
+  })(state.root);
+  state.root.open = true;
+  renderTree();
+};
+document.getElementById("listTags").onclick = () => {
+  const list = tagged();
+  const text = list.length
+    ? list.map(t => `${t.tag || "(no tag)"}\t${t.path.join(" › ")}`
+        + (t.note ? `\n\tnote: ${t.note}` : "")
+        + (t.live ? "" : "\n\t[excluded]")).join("\n\n")
+    : "No versions tagged yet. Hover a node and press v to label it.";
+  openSheet("Version list", text, "testing-ladder-versions.txt", list.length + " tagged nodes.");
+};
+document.getElementById("expJson").onclick = () => openSheet(
+  "Export JSON",
+  JSON.stringify({title:document.getElementById("title").textContent.trim(), levels:state.levels, root:state.root}, null, 2),
+  "testing-ladder.json",
+  "Full state — factors, tree, and pruning. Re-loadable through Import JSON."
+);
+document.getElementById("expCsv").onclick = () => {
+  const head = state.levels.map(l => l.name);
+  const rows = keptRuns();
+  const width = Math.max(head.length, ...rows.map(r => r.path.length), 1);
+  while(head.length < width) head.push("level " + (head.length + 1));
+  const csv = [["run"].concat(head, ["version", "note"]).map(csvCell).join(",")]
+    .concat(rows.map((r, i) => {
+      const cells = r.path.slice();
+      while(cells.length < width) cells.push("");
+      return [String(i + 1)].concat(cells, [r.tags.join(" "), r.notes.join(" · ")]).map(csvCell).join(",");
+    }))
+    .join("\n");
+  openSheet("Export runs", csv, "testing-ladder-runs.csv", rows.length + " kept runs, one per row.");
+};
+document.getElementById("expOutline").onclick = () => openSheet(
+  "Export outline", outline(), "testing-ladder.md", "Indented text version of the whole tree."
+);
+document.getElementById("impJson").onclick = () => openSheet(
+  "Import JSON", "", "testing-ladder.json", "Paste a previously exported file, then load it.", true
+);
+document.getElementById("applyImport").onclick = () => {
+  try{
+    const data = JSON.parse(document.getElementById("sheetText").value);
+    if(!data.levels || !data.root) throw new Error("missing levels or root");
+    state.levels = data.levels;
+    state.root = data.root;
+    walk(state.root, n => { n.id = nid(); n.children = n.children || []; n.tag = n.tag || ""; n.note = n.note || ""; });
+    if(data.title) document.getElementById("title").textContent = data.title;
+    document.getElementById("overlay").classList.remove("on");
+    renderFactors(); renderTree();
+  }catch(err){
+    document.getElementById("sheetNote").textContent = "That is not a valid ladder file — " + err.message;
+  }
+};
+document.getElementById("closeSheet").onclick = () => document.getElementById("overlay").classList.remove("on");
+document.getElementById("overlay").onclick = e => { if(e.target.id === "overlay") e.currentTarget.classList.remove("on"); };
+document.getElementById("copyText").onclick = async () => {
+  const ta = document.getElementById("sheetText");
+  ta.select();
+  try{ await navigator.clipboard.writeText(ta.value); }catch(e){ document.execCommand("copy"); }
+  document.getElementById("copyText").textContent = "Copied";
+  setTimeout(() => document.getElementById("copyText").textContent = "Copy", 1200);
+};
+document.getElementById("downloadText").onclick = () => {
+  const blob = new Blob([document.getElementById("sheetText").value], {type:"text/plain"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = sheetFilename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+
+state.root = buildTree(state.levels);
+renderFactors();
+renderTree();
+</script>
+
+<div id="cav_gate" style="position:fixed;inset:0;background:#1B4A63;display:grid;place-items:center;z-index:9999;font-family:-apple-system,Segoe UI,Arial,sans-serif">
+  <div style="background:#fff;border-radius:8px;padding:26px;width:min(340px,90%);text-align:center">
+    <b style="font-size:16px">Testing ladder</b>
+    <input id="cav_pw" type="password" placeholder="access word" autocomplete="off"
+      style="width:100%;padding:10px;border:1px solid #ccc;border-radius:5px;margin:12px 0;font-size:14px">
+    <button onclick="cavGo()" style="width:100%;padding:10px;border:none;border-radius:5px;background:#1B4A63;color:#fff;font-size:14px;cursor:pointer">View</button>
+    <div id="cav_err" style="color:#dc2626;font-size:12px;height:14px;margin-top:6px"></div>
+  </div>
+</div>
+<script>
+function cavGo(){
+  if(document.getElementById("cav_pw").value.trim()==="anton-bat-2026"){
+    sessionStorage.setItem("cav_ok","1");
+    document.getElementById("cav_gate").style.display="none";
+  } else document.getElementById("cav_err").textContent="Wrong access word.";
+}
+document.getElementById("cav_pw").addEventListener("keydown",function(e){if(e.key==="Enter")cavGo();});
+if(sessionStorage.getItem("cav_ok")==="1") document.getElementById("cav_gate").style.display="none";
+document.getElementById("cav_pw").focus();
 </script>
